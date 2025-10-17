@@ -1,4 +1,4 @@
-/*
+package org.firstinspires.ftc.teamcode;/*
  * Copyright (c) 2025 FIRST
  * All rights reserved.
  *
@@ -56,7 +56,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
  * we will also need to adjust the "PIDF" coefficients with some that are a better fit for our application.
  */
 
-@TeleOp(name = "StarterBotTeleop", group = "StarterBot")
+@TeleOp(name = "org.firstinspires.ftc.teamcode.StarterBotTeleop", group = "StarterBot")
 //@Disabled
 public class StarterBotTeleop extends OpMode {
     final double FEED_TIME_SECONDS = 0.20; //The feeder servos run this long when a shot is requested.
@@ -122,11 +122,11 @@ public class StarterBotTeleop extends OpMode {
          * to 'get' must correspond to the names assigned during the robot configuration
          * step.
          */
-        leftDrive = hardwareMap.get(DcMotor.class, "left_drive");
-        rightDrive = hardwareMap.get(DcMotor.class, "right_drive");
-        launcher = hardwareMap.get(DcMotorEx.class, "launcher");
-        leftFeeder = hardwareMap.get(CRServo.class, "left_feeder");
-        rightFeeder = hardwareMap.get(CRServo.class, "right_feeder");
+        leftDrive = hardwareMap.get(DcMotor.class, "LD"); // 0
+        rightDrive = hardwareMap.get(DcMotor.class, "RD"); // 1
+        launcher = hardwareMap.get(DcMotorEx.class, "LA"); // 2
+        leftFeeder = hardwareMap.get(CRServo.class, "LF"); // servo 0
+        rightFeeder = hardwareMap.get(CRServo.class, "RF"); // servo 1
 
         /*
          * To drive forward, most robots need the motor on one side to be reversed,
