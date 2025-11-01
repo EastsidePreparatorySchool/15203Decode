@@ -112,8 +112,8 @@ public class StarterBotTeleop extends OpMode {
     double leftPower;
     double rightPower;
 
-    //servos will run when true
-    boolean moveServos = false;
+    //servos will run in direction to keep balls in place when true
+    boolean servoBlock = false;
 
     /*
      * Code to run ONCE when the driver hits INIT
@@ -127,11 +127,11 @@ public class StarterBotTeleop extends OpMode {
          * to 'get' must correspond to the names assigned during the robot configuration
          * step.
          */
-        leftDrive = hardwareMap.get(DcMotor.class, "LD");
-        rightDrive = hardwareMap.get(DcMotor.class, "RD");
-        launcher = hardwareMap.get(DcMotorEx.class, "LA");
-        leftFeeder = hardwareMap.get(CRServo.class, "LF");
-        rightFeeder = hardwareMap.get(CRServo.class, "RF");
+        leftDrive = hardwareMap.get(DcMotor.class, "LD"); //0
+        rightDrive = hardwareMap.get(DcMotor.class, "RD"); //1
+        launcher = hardwareMap.get(DcMotorEx.class, "LA"); //2
+        leftFeeder = hardwareMap.get(CRServo.class, "LF"); //servo 2
+        rightFeeder = hardwareMap.get(CRServo.class, "RF"); //servo 3
 
 
         /*
@@ -192,6 +192,8 @@ public class StarterBotTeleop extends OpMode {
      */
     @Override
     public void start() {
+        leftFeeder.setPower(FULL_SPEED);
+        rightFeeder.setPower(FULL_SPEED);
     }
 
     /*
@@ -215,21 +217,21 @@ public class StarterBotTeleop extends OpMode {
          * queuing a shot.
          */
 
-        if (gamepad1.y) {
+        if (gamepad1.y) { //start flywheel
             launcher.setVelocity(LAUNCHER_TARGET_VELOCITY);
         } else if (gamepad1.b) { // stop flywheel
             launcher.setVelocity(STOP_SPEED);
         } else if (gamepad1.x) { // toggles servos off and on
-            moveServos = !moveServos;
+            servoBlock = !servoBlock;
         }
 
         //used to control servos
-        if (moveServos) {
-            leftFeeder.setPower(FULL_SPEED);
-            rightFeeder.setPower(FULL_SPEED);
+        if (servoBlock) {
+            leftFeeder.setDirection(DcMotorSimple.Direction.FORWARD);
+            rightFeeder.setDirection(DcMotorSimple.Direction.REVERSE);
         } else {
-            leftFeeder.setPower(STOP_SPEED);
-            rightFeeder.setPower(STOP_SPEED);
+            leftFeeder.setDirection(DcMotorSimple.Direction.REVERSE);
+            rightFeeder.setDirection(DcMotorSimple.Direction.FORWARD);
         }
 
         /*
@@ -243,6 +245,7 @@ public class StarterBotTeleop extends OpMode {
         telemetry.addData("State", launchState);
         telemetry.addData("Motors", "left (%.2f), right (%.2f)", leftPower, rightPower);
         telemetry.addData("motorSpeed", launcher.getVelocity());
+        telemetry.addData("balls blocked", servoBlock);
 
     }
 
