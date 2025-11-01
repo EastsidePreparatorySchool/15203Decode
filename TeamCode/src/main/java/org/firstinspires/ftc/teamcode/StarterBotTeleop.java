@@ -218,6 +218,14 @@ public class StarterBotTeleop extends OpMode {
             launcher.setVelocity(STOP_SPEED);
         }
 
+        if (gamepad1.left_bumper) {
+            leftFeeder.setPower(-1.0);
+            rightFeeder.setPower(-1.0);
+        } else if (gamepad1.right_bumper) {
+            leftFeeder.setPower(0.0);
+            rightFeeder.setPower(0.0);
+        }
+        
         /*
          * Now we call our "Launch" function.
          */
