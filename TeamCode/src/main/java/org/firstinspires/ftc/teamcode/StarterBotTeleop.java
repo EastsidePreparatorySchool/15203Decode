@@ -63,6 +63,8 @@ public class StarterBotTeleop extends OpMode {
     final double STOP_SPEED = 0.0; //We send this power to the servos when we want them to stop.
     final double FULL_SPEED = 1.0;
 
+    final double HOLD_SPEED = -1.0; // spin backward and hold ball
+
     /*
      * When we control our launcher motor, we are using encoders. These allow the control system
      * to read the current speed of the motor and apply more or less power to keep it at a constant
@@ -159,8 +161,8 @@ public class StarterBotTeleop extends OpMode {
         /*
          * set Feeders to an initial value to initialize the servo controller
          */
-        leftFeeder.setPower(STOP_SPEED);
-        rightFeeder.setPower(STOP_SPEED);
+        leftFeeder.setPower(HOLD_SPEED);
+        rightFeeder.setPower(HOLD_SPEED);
 
         launcher.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, new PIDFCoefficients(300, 0, 0, 10));
 
@@ -251,13 +253,19 @@ public class StarterBotTeleop extends OpMode {
     void launch(boolean shotRequested) {
         switch (launchState) {
             case IDLE:
+                leftFeeder.setPower(HOLD_SPEED);
+                rightFeeder.setPower(HOLD_SPEED);
+
                 if (shotRequested) {
                     launchState = LaunchState.SPIN_UP;
                 }
                 break;
+
             case SPIN_UP:
                 launcher.setVelocity(LAUNCHER_TARGET_VELOCITY);
                 if (launcher.getVelocity() > LAUNCHER_MIN_VELOCITY) {
+                    leftFeeder.setPower(STOP_SPEED);
+                    rightFeeder.setPower(STOP_SPEED);
                     launchState = LaunchState.LAUNCH;
                 }
                 break;
@@ -269,9 +277,10 @@ public class StarterBotTeleop extends OpMode {
                 break;
             case LAUNCHING:
                 if (feederTimer.seconds() > FEED_TIME_SECONDS) {
+                    launcher.setVelocity(STOP_SPEED);
+                    leftFeeder.setPower(HOLD_SPEED);
+                    rightFeeder.setPower(HOLD_SPEED);
                     launchState = LaunchState.IDLE;
-                    leftFeeder.setPower(STOP_SPEED);
-                    rightFeeder.setPower(STOP_SPEED);
                 }
                 break;
         }
