@@ -63,6 +63,8 @@ public class StarterBotTeleop extends OpMode {
     final double STOP_SPEED = 0.0; //We send this power to the servos when we want them to stop.
     final double FULL_SPEED = 1.0;
 
+    final double HOLD_SPEED = -1.0; // spin backward and hold ball
+
     /*
      * When we control our launcher motor, we are using encoders. These allow the control system
      * to read the current speed of the motor and apply more or less power to keep it at a constant
@@ -125,8 +127,8 @@ public class StarterBotTeleop extends OpMode {
         leftDrive = hardwareMap.get(DcMotor.class, "LD"); // 0
         rightDrive = hardwareMap.get(DcMotor.class, "RD"); // 1
         launcher = hardwareMap.get(DcMotorEx.class, "LA"); // 2
-        leftFeeder = hardwareMap.get(CRServo.class, "LF"); // servo 0
-        rightFeeder = hardwareMap.get(CRServo.class, "RF"); // servo 1
+        leftFeeder = hardwareMap.get(CRServo.class, "LF"); // servo 2
+        rightFeeder = hardwareMap.get(CRServo.class, "RF"); // servo 3
 
         /*
          * To drive forward, most robots need the motor on one side to be reversed,
@@ -159,8 +161,6 @@ public class StarterBotTeleop extends OpMode {
         /*
          * set Feeders to an initial value to initialize the servo controller
          */
-        leftFeeder.setPower(STOP_SPEED);
-        rightFeeder.setPower(STOP_SPEED);
 
         launcher.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, new PIDFCoefficients(300, 0, 0, 10));
 
@@ -168,7 +168,8 @@ public class StarterBotTeleop extends OpMode {
          * Much like our drivetrain motors, we set the left feeder servo to reverse so that they
          * both work to feed the ball into the robot.
          */
-        leftFeeder.setDirection(DcMotorSimple.Direction.REVERSE);
+        leftFeeder.setDirection(DcMotorSimple.Direction.FORWARD);
+        rightFeeder.setDirection(DcMotorSimple.Direction.REVERSE);
 
         /*
          * Tell the driver that initialization is complete.
@@ -210,16 +211,28 @@ public class StarterBotTeleop extends OpMode {
          * Here we give the user control of the speed of the launcher motor without automatically
          * queuing a shot.
          */
+
         if (gamepad1.y) {
             launcher.setVelocity(LAUNCHER_TARGET_VELOCITY);
         } else if (gamepad1.b) { // stop flywheel
             launcher.setVelocity(STOP_SPEED);
         }
 
+        if (gamepad1.a) {
+            leftFeeder.setPower(-0.6);
+            rightFeeder.setPower(-0.6);
+        } else if (gamepad1.x) {
+            leftFeeder.setPower(0.6);
+            rightFeeder.setPower(0.6);
+        } else if (gamepad1.right_bumper) {
+            leftFeeder.setPower(0.0);
+            rightFeeder.setPower(0.0);
+        }
+
         /*
          * Now we call our "Launch" function.
          */
-        launch(gamepad1.rightBumperWasPressed());
+        //launch(gamepad1.rightBumperWasPressed());
 
         /*
          * Show the state and motor powers
@@ -227,6 +240,8 @@ public class StarterBotTeleop extends OpMode {
         telemetry.addData("State", launchState);
         telemetry.addData("Motors", "left (%.2f), right (%.2f)", leftPower, rightPower);
         telemetry.addData("motorSpeed", launcher.getVelocity());
+        telemetry.addData("left servo power", leftFeeder.getPower());
+        telemetry.addData("right servo power", rightFeeder.getPower());
 
     }
 
@@ -251,13 +266,19 @@ public class StarterBotTeleop extends OpMode {
     void launch(boolean shotRequested) {
         switch (launchState) {
             case IDLE:
+                leftFeeder.setPower(HOLD_SPEED);
+                rightFeeder.setPower(HOLD_SPEED);
+
                 if (shotRequested) {
                     launchState = LaunchState.SPIN_UP;
                 }
                 break;
+
             case SPIN_UP:
                 launcher.setVelocity(LAUNCHER_TARGET_VELOCITY);
                 if (launcher.getVelocity() > LAUNCHER_MIN_VELOCITY) {
+                    leftFeeder.setPower(STOP_SPEED);
+                    rightFeeder.setPower(STOP_SPEED);
                     launchState = LaunchState.LAUNCH;
                 }
                 break;
@@ -269,9 +290,12 @@ public class StarterBotTeleop extends OpMode {
                 break;
             case LAUNCHING:
                 if (feederTimer.seconds() > FEED_TIME_SECONDS) {
+                    leftFeeder.setPower(FULL_SPEED);
+                    rightFeeder.setPower(FULL_SPEED);
+                    launcher.setVelocity(STOP_SPEED);
+                    leftFeeder.setPower(HOLD_SPEED);
+                    rightFeeder.setPower(HOLD_SPEED);
                     launchState = LaunchState.IDLE;
-                    leftFeeder.setPower(STOP_SPEED);
-                    rightFeeder.setPower(STOP_SPEED);
                 }
                 break;
         }
