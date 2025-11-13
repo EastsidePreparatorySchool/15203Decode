@@ -65,6 +65,10 @@ public class StarterBotTeleop extends OpMode {
 
     final double HOLD_SPEED = -1.0; // spin backward and hold ball
 
+    final int SPIN_TIME = 120; // servo spin time in milliseconds
+    final int HOLD_TIME = 1000; //servo hold time in milliseconds
+    final double SERVO_POWER = -0.4;
+
     /*
      * When we control our launcher motor, we are using encoders. These allow the control system
      * to read the current speed of the motor and apply more or less power to keep it at a constant
@@ -82,6 +86,8 @@ public class StarterBotTeleop extends OpMode {
     private CRServo rightFeeder = null;
 
     ElapsedTime feederTimer = new ElapsedTime();
+
+    boolean launching = false;
 
     /*
      * TECH TIP: State Machines
@@ -225,10 +231,34 @@ public class StarterBotTeleop extends OpMode {
             leftFeeder.setPower(0.6);
             rightFeeder.setPower(0.6);
         } else if (gamepad1.right_bumper) {
-            leftFeeder.setPower(0.0);
-            rightFeeder.setPower(0.0);
+            //leftFeeder.setPower(0.0);
+            //rightFeeder.setPower(0.0);
         }
 
+        if (gamepad1.right_bumper) {
+            feederTimer.reset();
+            launching = true;
+            leftFeeder.setPower(SERVO_POWER);
+            rightFeeder.setPower(SERVO_POWER);
+        }
+
+        if (feederTimer.milliseconds() > SPIN_TIME && launching && feederTimer.milliseconds() < HOLD_TIME+SPIN_TIME) {
+            leftFeeder.setPower(0.0);
+            rightFeeder.setPower(0.0);
+        } else if (feederTimer.milliseconds() > HOLD_TIME+SPIN_TIME && feederTimer.milliseconds() < (HOLD_TIME)+(SPIN_TIME*2) && launching) {
+            leftFeeder.setPower(SERVO_POWER);
+            rightFeeder.setPower(SERVO_POWER);
+        } else if (feederTimer.milliseconds() > (HOLD_TIME)+(SPIN_TIME*2) && launching && feederTimer.milliseconds() < (HOLD_TIME*2)+(SPIN_TIME*2)) {
+            leftFeeder.setPower(0.0);
+            rightFeeder.setPower(0.0);
+        } else if (feederTimer.milliseconds() > (HOLD_TIME*2)+(SPIN_TIME*2) && feederTimer.milliseconds() < (HOLD_TIME*2)+(SPIN_TIME*3) && launching) {
+            leftFeeder.setPower(SERVO_POWER);
+            rightFeeder.setPower(SERVO_POWER);
+        } else if (feederTimer.milliseconds() > (HOLD_TIME*2)+(SPIN_TIME*3) && launching) {
+            leftFeeder.setPower(0.0);
+            rightFeeder.setPower(0.0);
+            launching = false;
+        }
         /*
          * Now we call our "Launch" function.
          */
