@@ -63,11 +63,11 @@ public class StarterBotTeleop extends OpMode {
     final double STOP_SPEED = 0.0; //We send this power to the servos when we want them to stop.
     final double FULL_SPEED = 1.0;
 
-    final double HOLD_SPEED = -1.0; // spin backward and hold ball
+    final double HOLD_SPEED = 0.0; // spin backward and hold ball
 
-    final int SPIN_TIME = 120; // servo spin time in milliseconds
-    final int HOLD_TIME = 1000; //servo hold time in milliseconds
-    final double SERVO_POWER = -0.4;
+    final int SPIN_TIME = 150; // servo spin time in milliseconds
+    final int HOLD_TIME = 1500; //servo hold time in milliseconds
+    final double SERVO_POWER = -1.0;
 
     /*
      * When we control our launcher motor, we are using encoders. These allow the control system
@@ -75,7 +75,7 @@ public class StarterBotTeleop extends OpMode {
      * velocity. Here we are setting the target, and minimum velocity that the launcher should run
      * at. The minimum velocity is a threshold for determining when to fire.
      */
-    final double LAUNCHER_TARGET_VELOCITY = 1125;
+    final double LAUNCHER_TARGET_VELOCITY = 1350;
     final double LAUNCHER_MIN_VELOCITY = 1075;
 
     // Declare OpMode members.
@@ -87,7 +87,13 @@ public class StarterBotTeleop extends OpMode {
 
     ElapsedTime feederTimer = new ElapsedTime();
 
+    ElapsedTime shootTimer = new ElapsedTime();
+
+    boolean shooting = false;
+
     boolean launching = false;
+
+    boolean a = false;
 
     /*
      * TECH TIP: State Machines
@@ -140,11 +146,11 @@ public class StarterBotTeleop extends OpMode {
          * To drive forward, most robots need the motor on one side to be reversed,
          * because the axles point in opposite directions. Pushing the left stick forward
          * MUST make robot go forward. So adjust these two lines based on your first test drive.
-         * Note: The settings here assume direct drive on left and right wheels. Gear
+         * Note: The settings hdriere assume direct drive on left and right wheels. Gear
          * Reduction or 90 Deg drives may require direction flips
          */
         leftDrive.setDirection(DcMotor.Direction.REVERSE);
-        rightDrive.setDirection(DcMotor.Direction.FORWARD);
+        rightDrive.setDirection(DcMotor.Direction.REVERSE);
 
         /*
          * Here we set our launcher to the RUN_USING_ENCODER runmode.
@@ -211,18 +217,20 @@ public class StarterBotTeleop extends OpMode {
          * both motors work to rotate the robot. Combinations of these inputs can be used to create
          * more complex maneuvers.
          */
-        arcadeDrive(-gamepad1.left_stick_y, gamepad1.right_stick_x);
+        arcadeDrive(gamepad1.left_stick_x, -gamepad1.right_stick_y);
 
         /*
          * Here we give the user control of the speed of the launcher motor without automatically
          * queuing a shot.
          */
-        if (gamepad1.y) {
+
+        if (gamepad1.y) { // start flywheel
             launcher.setVelocity(LAUNCHER_TARGET_VELOCITY);
         } else if (gamepad1.b) { // stop flywheel
             launcher.setVelocity(STOP_SPEED);
         }
 
+        //these buttons are to mannually control servos
         if (gamepad1.a) {
             leftFeeder.setPower(-0.6);
             rightFeeder.setPower(-0.6);
@@ -230,17 +238,29 @@ public class StarterBotTeleop extends OpMode {
             leftFeeder.setPower(0.6);
             rightFeeder.setPower(0.6);
         } else if (gamepad1.right_bumper) {
-            //leftFeeder.setPower(0.0);
-            //rightFeeder.setPower(0.0);
+            leftFeeder.setPower(0.0);
+            rightFeeder.setPower(0.0);
         }
 
-        if (gamepad1.right_bumper) {
-            feederTimer.reset();
-            launching = true;
-            leftFeeder.setPower(SERVO_POWER);
-            rightFeeder.setPower(SERVO_POWER);
+        if (gamepad1.dpad_down) { //checks if launcher button is pressed, this code is only for servos
+            if (!launching) { //if servos are not currently running
+                              //then start servo automation
+                //feederTimer.milliseconds() returns the time in milliseconds since the program has started
+                feederTimer.reset();
+                //the line above resets the timer to 0 milliseconds so now feederTimer.milliseconds() returns the time in milliseconds since feederTimer.reset() was called
+                launching = true; //this is so that the robot only launches after the button is clicked
+
+                //starts the servos
+                leftFeeder.setPower(SERVO_POWER);
+                rightFeeder.setPower(SERVO_POWER);
+            }
         }
 
+        //this group of if-statements is what makes the servos spin and wait
+        //each statement is for a block of time
+            //e.g. the first one says, "if the time is between 50 and 1550 milliseconds stop the servos" <- because we started them earlier
+            // the second one says, "if the time is between 1550 and 1600 milliseconds spin the servos"
+            //and so on
         if (feederTimer.milliseconds() > SPIN_TIME && launching && feederTimer.milliseconds() < HOLD_TIME+SPIN_TIME) {
             leftFeeder.setPower(0.0);
             rightFeeder.setPower(0.0);
@@ -256,6 +276,7 @@ public class StarterBotTeleop extends OpMode {
         } else if (feederTimer.milliseconds() > (HOLD_TIME*2)+(SPIN_TIME*3) && launching) {
             leftFeeder.setPower(0.0);
             rightFeeder.setPower(0.0);
+            //ends the process
             launching = false;
         }
         /*
@@ -271,6 +292,8 @@ public class StarterBotTeleop extends OpMode {
         telemetry.addData("motorSpeed", launcher.getVelocity());
         telemetry.addData("left servo power", leftFeeder.getPower());
         telemetry.addData("right servo power", rightFeeder.getPower());
+        telemetry.addData("time", feederTimer.milliseconds());
+        telemetry.addData("a", a);
 
     }
 
@@ -282,8 +305,8 @@ public class StarterBotTeleop extends OpMode {
     }
 
     void arcadeDrive(double forward, double rotate) {
-        leftPower = forward + rotate;
-        rightPower = forward - rotate;
+        leftPower = forward - rotate;
+        rightPower = forward + rotate;
 
         /*
          * Send calculated power to wheels
